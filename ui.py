@@ -1,5 +1,5 @@
 from tkinter import *
-from PIL import ImageTk, Image
+from PIL import ImageTk, Image, ImageDraw, ImageFont
 from tkinter import filedialog
 
 
@@ -31,6 +31,8 @@ class Interface:
         )
         self.btn_add_text.grid(column=2, row=2, pady=10)
 
+        self.photo_to_modify = None
+        self.edited_photo = None
 
     def choose_file(self):
         filename = filedialog.askopenfilename(
@@ -38,15 +40,34 @@ class Interface:
         )
         if filename:
             my_image = Image.open(filename)
-            my_image.thumbnail((1000,500), Image.LANCZOS)
+            self.photo_to_modify = filename
+            my_image.thumbnail((1000, 500), Image.LANCZOS)
             img = ImageTk.PhotoImage(my_image)
-            
+
             self.canvas.create_image(500, 250, image=img, tags="img")
             self.canvas.image = img
 
     def add_text(self):
-        pass
+        img = Image.open(self.photo_to_modify)
+        text_font = ImageFont.truetype("arial.ttf", 70)
+        text_to_add = self.text_entry.get()
 
-root = Tk()
-app = Interface(root)
-root.mainloop()
+        edit_image = ImageDraw.Draw(img)
+        width, height = img.size
+        edit_image.text((width / 2, height / 2), text_to_add, ("red"), font=text_font)
+
+        if img:
+            filename = filedialog.asksaveasfilename(
+                title="Save image as", filetypes=[("Image files", "*.png;*.jpg;*.jpeg")]
+            )
+            if filename:
+                self.edited_photo = filename
+                img.save(filename)
+                self.canvas.after(2000, self.show_img)
+
+    def show_img(self):
+        edited_img = Image.open(self.edited_photo)
+        edited_img.thumbnail((1000, 500), Image.LANCZOS)
+        img = ImageTk.PhotoImage(edited_img)
+        self.canvas.create_image(500, 250, image=img, tags="img")
+        self.canvas.image = img
